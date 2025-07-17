@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>外卖闪送模拟界面</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#42a5f5',
+            secondary: '#c43e3e',
+            neutral: {
+              100: '#f5f5f5',
+              200: '#e4e4e4',
+              300: '#ddd',
+              400: '#757575',
+              500: '#616161',
+              600: '#333'
+            },
+            success: '#4caf50',
+            danger: '#f44336',
+            pending: '#ff9800'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            'card': '0 0 15px rgba(0, 0, 0, 0.1)',
+            'elevated': '0 4px 12px rgba(0, 0, 0, 0.15)'
+          }
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .bg-pattern {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" opacity="0.1"><path fill="%2342a5f5" d="M50,0 L100,50 L50,100 L0,50 Z"/></svg>');
+      }
+      .transition-all-300 {
+        transition: all 0.3s ease;
+      }
+      .scrollbar-thin {
+        scrollbar-width: thin;
+      }
+      .scrollbar-thin::-webkit-scrollbar {
+        width: 4px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+      }
+    }
+  </style>
+</head>
+
+<body class="font-sans bg-white bg-pattern min-h-screen">
+  <div id="app" class="transition-all duration-300">
+    <header class="bg-primary text-white text-center py-4 shadow-md">
+      <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold flex items-center justify-center">
+        <i class="fa fa-star text-yellow-300 mr-2"></i>
+        外卖闪送
+        <i class="fa fa-star text-yellow-300 ml-2"></i>
+      </h1>
+      <nav class="mt-2 flex justify-center space-x-4">
+        <button id="home-btn" class="px-3 py-1 text-sm bg-white/30 rounded-md transition-all duration-300 hover:bg-white/40">
+          <i class="fa fa-home mr-1"></i> 主页
+        </button>
+        <button id="history-btn" class="px-3 py-1 text-sm bg-white/20 rounded-md transition-all duration-300 hover:bg-white/30">
+          <i class="fa fa-history mr-1"></i> 历史订单
+        </button>
+      </nav>
+    </header>
+
+    <main class="max-w-3xl mx-auto my-6 px-4">
+      <!-- 主页内容 -->
+      <div id="home-page" class="transition-all duration-300">
+        <section class="bg-white rounded-xl shadow-card p-6 mb-6 transform hover:shadow-elevated transition-all duration-300">
+          <h2 class="text-xl font-bold text-neutral-600 mb-4 flex items-center">
+            <i class="fa fa-shopping-basket text-primary mr-2"></i>
+            外卖信息
+          </h2>
+          
+          <div class="space-y-4">
+            <div class="relative">
+              <input type="text" id="item-name" placeholder="商品名称" 
+                    class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all-300" 
+                    required>
+              <div id="name-error" class="hidden text-secondary text-sm mt-1"></div>
+            </div>
+            
+            <div class="relative">
+              <input type="number" step="0.01" min="0" id="item-price" placeholder="商品金额" 
+                    class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all-300" 
+                    required>
+              <div id="price-error" class="hidden text-secondary text-sm mt-1"></div>
+            </div>
+            
+            <button id="add-item-btn" 
+                    class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center">
+              <i class="fa fa-plus-circle mr-2"></i>
+              确认添加
+            </button>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-xl shadow-card p-6 transform hover:shadow-elevated transition-all duration-300">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-neutral-600 flex items-center">
+              <i class="fa fa-shopping-cart text-primary mr-2"></i>
+              购物车
+            </h2>
+            <span id="item-count" class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+              0 项商品
+            </span>
+          </div>
+          
+          <ul id="cart-items" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+            <!-- 购物车项目将动态添加到这里 -->
+          </ul>
+          
+          <div class="border-t border-neutral-200 mt-4 pt-4 flex justify-between items-center">
+            <span class="text-neutral-400">总计：</span>
+            <span id="total" class="text-secondary font-bold text-xl">¥0.00</span>
+          </div>
+          
+          <button id="save-order-btn" 
+                  class="mt-4 w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center">
+            <i class="fa fa-check-circle mr-2"></i>
+            保存订单
+          </button>
+          
+          <div class="mt-6 bg-neutral-100 rounded-lg p-4 text-center">
+            <p class="text-neutral-600 font-medium">
+              <i class="fa fa-rocket text-primary mr-2"></i>
+              一键下单，美食即刻到家！
+            </p>
+            <p class="text-neutral-600 mt-1">
+              <i class="fa fa-shopping-bag text-primary mr-2"></i>
+              购物闪送，生活所需30分钟送达！
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <!-- 历史订单页面 -->
+      <div id="history-page" class="hidden transition-all duration-300">
+        <section class="bg-white rounded-xl shadow-card p-6 mb-6 transform hover:shadow-elevated transition-all duration-300">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-neutral-600 flex items-center">
+              <i class="fa fa-history text-primary mr-2"></i>
+              历史订单
+            </h2>
+            <div class="flex space-x-2">
+              <button id="all-orders-btn" class="px-3 py-1 text-sm bg-primary text-white rounded-md transition-all duration-300">
+                全部
+              </button>
+              <button id="completed-orders-btn" class="px-3 py-1 text-sm bg-neutral-200 text-neutral-600 rounded-md transition-all duration-300">
+                已送达
+              </button>
+              <button id="cancelled-orders-btn" class="px-3 py-1 text-sm bg-neutral-200 text-neutral-600 rounded-md transition-all duration-300">
+                已取消
+              </button>
+            </div>
+          </div>
+          
+          <div class="border-b border-neutral-200 mb-4">
+            <div class="flex text-sm text-neutral-400 pb-2">
+              <div class="w-1/4">订单编号</div>
+              <div class="w-2/4">订单内容</div>
+              <div class="w-1/4 text-right">操作</div>
+            </div>
+          </div>
+          
+          <div id="history-orders" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin">
+            <!-- 历史订单将动态添加到这里 -->
+            <div class="text-center text-neutral-400 py-8">
+              <i class="fa fa-inbox text-4xl mb-2"></i>
+              <p>暂无历史订单</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="confirmation-page" class="hidden transition-all duration-300">
+    <header class="bg-primary text-white text-center py-4 shadow-md">
+      <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold">订单确认</h1>
+    </header>
+
+    <main class="max-w-3xl mx-auto my-6 px-4">
+      <section class="bg-white rounded-xl shadow-card p-6 text-center transform hover:shadow-elevated transition-all duration-300">
+        <div class="mb-6">
+          <div class="inline-block bg-primary/10 text-primary rounded-full p-4 mb-4">
+            <i class="fa fa-info-circle text-3xl"></i>
+          </div>
+          <p class="text-lg font-medium text-neutral-600">您的宝宝向您发起一笔订单代付</p>
+        </div>
+        
+        <div class="border-t border-b border-neutral-200 py-4 my-4">
+          <ul id="saved-items" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
+            <!-- 保存的商品将动态添加到这里 -->
+          </ul>
+        </div>
+        
+        <div class="mb-6">
+          <span class="text-neutral-400">总计：</span>
+          <span id="confirmation-total" class="text-secondary font-bold text-2xl">¥0.00</span>
+        </div>
+        
+        <div class="space-y-3">
+          <button id="reject-order-btn" 
+                  class="w-full bg-neutral-400 hover:bg-neutral-500 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center">
+            <i class="fa fa-times-circle mr-2"></i>
+            拒绝订单
+          </button>
+          
+          <button id="pay-now-btn" 
+                  class="w-full bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] flex items-center justify-center">
+            <i class="fa fa-credit-card mr-2"></i>
+            同意支付
+          </button>
+        </div>
+        
+        <div class="mt-6 pt-6 border-t border-neutral-200">
+          <p class="text-neutral-400 mb-4">分享此订单链接给他人</p>
+          <div class="flex">
+            <input type="text" id="share-url" class="flex-1 px-4 py-3 border border-neutral-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all-300" readonly>
+            <button id="copy-url-btn" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-r-lg transition-all duration-300">
+              <i class="fa fa-copy"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 订单详情模态框 -->
+  <div id="order-detail-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-xl shadow-elevated w-full max-w-2xl max-h-[90vh] overflow-hidden transform transition-all duration-300 scale-95">
+      <div class="p-6 border-b border-neutral-200 flex justify-between items-center">
+        <h3 class="text-xl font-bold text-neutral-600" id="modal-title">订单详情</h3>
+        <button id="close-modal-btn" class="text-neutral-400 hover:text-neutral-600 transition-colors">
+          <i class="fa fa-times text-xl"></i>
+        </button>
+      </div>
+      <div class="p-6 max-h-[calc(90vh-120px)] overflow-y-auto" id="modal-content">
+        <!-- 订单详情内容将动态添加到这里 -->
+      </div>
+      <div class="p-6 border-t border-neutral-200">
+        <button id="delete-order-btn" class="w-full bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
+          <i class="fa fa-trash mr-2"></i>
+          删除订单
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 获取DOM元素
+    const addItemBtn = document.getElementById('add-item-btn');
+    const itemNameInput = document.getElementById('item-name');
+    const itemPriceInput = document.getElementById('item-price');
+    const cartItemsList = document.getElementById('cart-items');
+    const totalDiv = document.getElementById('total');
+    const saveOrderBtn = document.getElementById('save-order-btn');
+    const appDiv = document.getElementById('app');
+    const confirmationPage = document.getElementById('confirmation-page');
+    const savedItemsList = document.getElementById('saved-items');
+    const confirmationTotal = document.getElementById('confirmation-total');
+    const payNowBtn = document.getElementById('pay-now-btn');
+    const rejectOrderBtn = document.getElementById('reject-order-btn');
+    const itemCount = document.getElementById('item-count');
+    const nameError = document.getElementById('name-error');
+    const priceError = document.getElementById('price-error');
+    const homeBtn = document.getElementById('home-btn');
+    const historyBtn = document.getElementById('history-btn');
+    const homePage = document.getElementById('home-page');
+    const historyPage = document.getElementById('history-page');
+    const allOrdersBtn = document.getElementById('all-orders-btn');
+    const completedOrdersBtn = document.getElementById('completed-orders-btn');
+    const cancelledOrdersBtn = document.getElementById('cancelled-orders-btn');
+    const historyOrders = document.getElementById('history-orders');
+    const orderDetailModal = document.getElementById('order-detail-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const deleteOrderBtn = document.getElementById('delete-order-btn');
+    const shareUrlInput = document.getElementById('share-url');
+    const copyUrlBtn = document.getElementById('copy-url-btn');
+
+    // 初始化购物车状态
+    let cartItems = [];
+    let totalPrice = 0;
+    let currentOrderId = null;
+    let currentOrderStatus = null;
+
+    // 初始化历史订单
+    let orderHistory = JSON.parse(localStorage.getItem('orderHistory')) || [];
+
+    // 表单验证函数
+    function validateForm() {
+      let isValid = true;
+      const itemName = itemNameInput.value.trim();
+      const itemPrice = parseFloat(itemPriceInput.value.trim());
+
+      // 验证商品名称
+      if (itemName === '') {
+        showError(nameError, '请输入商品名称');
+        isValid = false;
+      } else {
+        hideError(nameError);
+      }
+
+      // 验证商品价格
+      if (isNaN(itemPrice) || itemPrice <= 0) {
+        showError(priceError, '请输入有效的商品金额（必须大于0）');
+        isValid = false;
+      } else {
+        hideError(priceError);
+      }
+
+      return isValid;
+    }
+
+    // 显示错误信息
+    function showError(element, message) {
+      element.textContent = message;
+      element.classList.remove('hidden');
+      element.previousElementSibling.classList.add('border-secondary');
+      element.previousElementSibling.classList.remove('focus:ring-primary/50');
+      element.previousElementSibling.classList.add('focus:ring-secondary/50');
+    }
+
+    // 隐藏错误信息
+    function hideError(element) {
+      element.classList.add('hidden');
+      element.previousElementSibling.classList.remove('border-secondary');
+      element.previousElementSibling.classList.add('focus:ring-primary/50');
+      element.previousElementSibling.classList.remove('focus:ring-secondary/50');
+    }
+
+    // 添加商品到购物车
+    addItemBtn.addEventListener('click', () => {
+      if (!validateForm()) return;
+
+      const itemName = itemNameInput.value.trim();
+      const itemPrice = parseFloat(itemPriceInput.value.trim());
+
+      // 检查商品是否已存在于购物车
+      const existingItem = cartItems.find(item => item.name === itemName);
+      if (existingItem) {
+        existingItem.quantity++;
+        existingItem.totalPrice = existingItem.price * existingItem.quantity;
+      } else {
+        cartItems.push({
+          id: Date.now(), // 为每个商品添加唯一ID
+          name: itemName,
+          price: itemPrice,
+          quantity: 1,
+          totalPrice: itemPrice
+        });
+      }
+
+      // 清空输入框
+      itemNameInput.value = '';
+      itemPriceInput.value = '';
+      
+      // 更新购物车显示
+      updateCartDisplay();
+      
+      // 添加成功动画
+      addItemBtn.classList.add('bg-green-600');
+      setTimeout(() => {
+        addItemBtn.classList.remove('bg-green-600');
+      }, 300);
+    });
+
+    // 实时验证
+    itemNameInput.addEventListener('input', validateForm);
+    itemPriceInput.addEventListener('input', validateForm);
+
+    // 更新购物车显示
+    function updateCartDisplay() {
+      // 清空购物车列表
+      cartItemsList.innerHTML = '';
+      
+      // 重置总价
+      totalPrice = 0;
+      
+      // 添加每个商品到购物车列表
+      cartItems.forEach((item, index) => {
+        totalPrice += item.totalPrice;
+        
+        const li = document.createElement('li');
+        li.className = 'bg-neutral-50 rounded-lg p-3 flex justify-between items-center transition-all duration-300 hover:bg-neutral-100';
+        li.innerHTML = `
+          <div class="flex items-center">
+            <div class="bg-primary/10 text-primary rounded-full p-2 mr-3">
+              <i class="fa fa-cutlery"></i>
+            </div>
+            <div>
+              <h3 class="font-medium text-neutral-600">${item.name}</h3>
+              <div class="flex items-center mt-1">
+                <button class="decrease-btn text-primary hover:text-primary/80 transition-colors" data-index="${index}">
+                  <i class="fa fa-minus-circle"></i>
+                </button>
+                <span class="mx-2 text-neutral-600">${item.quantity}</span>
+                <button class="increase-btn text-primary hover:text-primary/80 transition-colors" data-index="${index}">
+                  <i class="fa fa-plus-circle"></i>
+                </button>
+                <span class="ml-3 text-neutral-400">¥${item.price.toFixed(2)}/份</span>
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-secondary font-medium">¥${item.totalPrice.toFixed(2)}</span>
+            <button class="delete-btn mt-1 text-neutral-400 hover:text-secondary transition-colors" data-index="${index}">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        `;
+        cartItemsList.appendChild(li);
+      });
+      
+      // 更新总价显示
+      totalDiv.textContent = `¥${totalPrice.toFixed(2)}`;
+      confirmationTotal.textContent = `¥${totalPrice.toFixed(2)}`;
+      
+      // 更新商品数量
+      itemCount.textContent = `${cartItems.length} 项商品`;
+      
+      // 禁用/启用保存订单按钮
+      if (cartItems.length === 0) {
+        saveOrderBtn.disabled = true;
+        saveOrderBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        saveOrderBtn.disabled = false;
+        saveOrderBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    // 购物车商品数量操作
+    cartItemsList.addEventListener('click', (e) => {
+      if (e.target.closest('.decrease-btn')) {
+        const index = parseInt(e.target.closest('.decrease-btn').getAttribute('data-index'));
+        if (cartItems[index].quantity > 1) {
+          cartItems[index].quantity--;
+          cartItems[index].totalPrice = cartItems[index].price * cartItems[index].quantity;
+        } else {
+          cartItems.splice(index, 1);
+        }
+        updateCartDisplay();
+      } else if (e.target.closest('.increase-btn')) {
+        const index = parseInt(e.target.closest('.increase-btn').getAttribute('data-index'));
+        cartItems[index].quantity++;
+        cartItems[index].totalPrice = cartItems[index].price * cartItems[index].quantity;
+        updateCartDisplay();
+      } else if (e.target.closest('.delete-btn')) {
+        const index = parseInt(e.target.closest('.delete-btn').getAttribute('data-index'));
+        
+        // 添加删除动画
+        const itemElement = e.target.closest('li');
+        itemElement.classList.add('opacity-0', 'scale-95');
+        itemElement.style.height = `${itemElement.offsetHeight}px`;
+        
+        setTimeout(() => {
+          itemElement.style.height = '0';
+          itemElement.style.margin = '0';
+          itemElement.style.padding = '0';
+          itemElement.style.overflow = 'hidden';
+          
+          setTimeout(() => {
+            cartItems.splice(index, 1);
+            updateCartDisplay();
+          }, 300);
+        }, 100);
+      }
+    });
+
+    // 保存订单并切换到确认页面
+    saveOrderBtn.addEventListener('click', () => {
+      if (cartItems.length === 0) {
+        alert('购物车为空，请添加商品后再保存订单');
+        return;
+      }
+      
+      // 保存订单到sessionStorage
+      const orderData = {
+        items: cartItems,
+        total: totalPrice
+      };
+      sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
+      
+      // 生成分享链接
+      const orderJson = encodeURIComponent(JSON.stringify(orderData));
+      const shareUrl = `${window.location.origin}${window.location.pathname}?order=${orderJson}`;
+      shareUrlInput.value = shareUrl;
+      
+      // 更新确认页面的商品列表
+      savedItemsList.innerHTML = '';
+      cartItems.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'border-b border-neutral-200 pb-3 last:border-b-0';
+        li.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div class="flex items-center">
+              <div class="bg-primary/10 text-primary rounded-full p-2 mr-3">
+                <i class="fa fa-cutlery"></i>
+              </div>
+              <div>
+                <h3 class="font-medium text-neutral-600">${item.name}</h3>
+                <span class="text-neutral-400">¥${item.price.toFixed(2)}/份</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-neutral-400 mr-2">×${item.quantity}</span>
+              <span class="text-secondary font-medium">¥${item.totalPrice.toFixed(2)}</span>
+            </div>
+          </div>
+        `;
+        savedItemsList.appendChild(li);
+      });
+      
+      // 切换页面
+      appDiv.classList.add('opacity-0');
+      
+      setTimeout(() => {
+        appDiv.style.display = 'none';
+        confirmationPage.style.display = 'block';
+        
+        setTimeout(() => {
+          confirmationPage.classList.remove('hidden');
+          confirmationPage.classList.add('opacity-100');
+        }, 50);
+      }, 300);
+    });
+
+    // 复制分享链接
+    copyUrlBtn.addEventListener('click', () => {
+      shareUrlInput.select();
+      document.execCommand('copy');
+      
+      // 显示复制成功提示
+      const originalText = copyUrlBtn.innerHTML;
+      copyUrlBtn.innerHTML = '<i class="fa fa-check"></i>';
+      copyUrlBtn.classList.add('bg-green-600');
+      
+      setTimeout(() => {
+        copyUrlBtn.innerHTML = originalText;
+        copyUrlBtn.classList.remove('bg-green-600');
+      }, 2000);
+    });
+
+    // 同意付款
+    payNowBtn.addEventListener('click', () => {
+      // 添加支付动画
+      payNowBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 支付处理中...';
+      payNowBtn.disabled = true;
+      
+      setTimeout(() => {
+        alert(`付款成功！金额：¥${totalPrice.toFixed(2)}`);
+        
+        // 保存订单到历史记录
+        saveOrderToHistory('completed');
+        
+        // 清空购物车和待处理订单
+        cartItems = [];
+        totalPrice = 0;
+        sessionStorage.removeItem('pendingOrder');
+        
+        updateCartDisplay();
+        
+        // 返回购物车页面
+        confirmationPage.classList.add('opacity-0');
+        
+        setTimeout(() => {
+          confirmationPage.style.display = 'none';
+          appDiv.style.display = 'block';
+          homePage.style.display = 'block';
+          historyPage.style.display = 'hidden';
+          
+          setTimeout(() => {
+            appDiv.classList.remove('opacity-0');
+            payNowBtn.innerHTML = '<i class="fa fa-credit-card mr-2"></i> 同意支付';
+            payNowBtn.disabled = false;
+          }, 50);
+        }, 300);
+      }, 1500);
+    });
+
+    // 拒绝订单
+    rejectOrderBtn.addEventListener('click', () => {
+      // 添加拒绝动画
+      rejectOrderBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 处理中...';
+      rejectOrderBtn.disabled = true;
+      
+      setTimeout(() => {
+        alert('订单已拒绝');
+        
+        // 保存订单到历史记录
+        saveOrderToHistory('cancelled');
+        
+        // 清空购物车和待处理订单
+        cartItems = [];
+        totalPrice = 0;
+        sessionStorage.removeItem('pendingOrder');
+        
+        updateCartDisplay();
+        
+        // 返回购物车页面
+        confirmationPage.classList.add('opacity-0');
+        
+        setTimeout(() => {
+          confirmationPage.style.display = 'none';
+          appDiv.style.display = 'block';
+          homePage.style.display = 'block';
+          historyPage.style.display = 'hidden';
+          
+          setTimeout(() => {
+            appDiv.classList.remove('opacity-0');
+            rejectOrderBtn.innerHTML = '<i class="fa fa-times-circle mr-2"></i> 拒绝订单';
+            rejectOrderBtn.disabled = false;
+          }, 50);
+        }, 300);
+      }, 800);
+    });
+
+    // 保存订单到历史记录
+    function saveOrderToHistory(status) {
+      const orderId = Date.now();
+      const orderDate = new Date().toLocaleString();
+      
+      // 从sessionStorage获取待处理订单
+      let orderItems = cartItems;
+      if (sessionStorage.getItem('pendingOrder')) {
+        const pendingOrder = JSON.parse(sessionStorage.getItem('pendingOrder'));
+        orderItems = pendingOrder.items;
+      }
+      
+      const order = {
+        id: orderId,
+        date: orderDate,
+        items: orderItems,
+        total: totalPrice,
+        status: status
+      };
+      
+      orderHistory.unshift(order); // 添加到历史记录的开头
+      localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
+      
+      // 更新历史订单显示
+      updateHistoryOrders();
+    }
+
+    // 切换主页和历史订单页面
+    homeBtn.addEventListener('click', () => {
+      if (homePage.classList.contains('hidden')) {
+        // 添加切换动画
+        historyPage.classList.add('opacity-0');
+        setTimeout(() => {
+          historyPage.classList.add('hidden');
+          homePage.classList.remove('hidden');
+          setTimeout(() => {
+            homePage.classList.remove('opacity-0');
+          }, 50);
+        }, 300);
+        
+        // 更新导航按钮状态
+        homeBtn.classList.add('bg-white/30');
+        historyBtn.classList.remove('bg-white/30');
+      }
+    });
+
+    historyBtn.addEventListener('click', () => {
+      if (historyPage.classList.contains('hidden')) {
+        // 添加切换动画
+        homePage.classList.add('opacity-0');
+        setTimeout(() => {
+          homePage.classList.add('hidden');
+          historyPage.classList.remove('hidden');
+          setTimeout(() => {
+            historyPage.classList.remove('opacity-0');
+          }, 50);
+        }, 300);
+        
+        // 更新导航按钮状态
+        homeBtn.classList.remove('bg-white/30');
+        historyBtn.classList.add('bg-white/30');
+        
+        // 更新历史订单显示
+        updateHistoryOrders();
+      }
+    });
+
+    // 过滤历史订单
+    let currentFilter = 'all';
+    
+    allOrdersBtn.addEventListener('click', () => {
+      if (currentFilter === 'all') return;
+      
+      currentFilter = 'all';
+      updateButtonStates();
+      updateHistoryOrders();
+    });
+    
+    completedOrdersBtn.addEventListener('click', () => {
+      if (currentFilter === 'completed') return;
+      
+      currentFilter = 'completed';
+      updateButtonStates();
+      updateHistoryOrders();
+    });
+    
+    cancelledOrdersBtn.addEventListener('click', () => {
+      if (currentFilter === 'cancelled') return;
+      
+      currentFilter = 'cancelled';
+      updateButtonStates();
+      updateHistoryOrders();
+    });
+
+    // 更新按钮状态
+    function updateButtonStates() {
+      allOrdersBtn.className = 'px-3 py-1 text-sm bg-primary text-white rounded-md transition-all duration-300';
+      completedOrdersBtn.className = 'px-3 py-1 text-sm bg-neutral-200 text-neutral-600 rounded-md transition-all duration-300';
+      cancelledOrdersBtn.className = 'px-3 py-1 text-sm bg-neutral-200 text-neutral-600 rounded-md transition-all duration-300';
+      
+      if (currentFilter === 'completed') {
+        completedOrdersBtn.className = 'px-3 py-1 text-sm bg-primary text-white rounded-md transition-all duration-300';
+        allOrdersBtn.className = 'px-3 py-1 text-sm bg-neutral-200 text-neutral-600 rounded-md transition-all duration-300';
+      } else if (currentFilter === 'cancelled') {
+        cancelledOrdersBtn.className = 'px-3 py-1 text-sm bg-primary text-white rounded-md transition-all duration-300';
+        allOrdersBtn.className = 'px-3 py-1 text-sm bg-neutral-200 text-neutral-600 rounded-md transition-all duration-300';
+      }
+    }
+
+    // 更新历史订单显示
+    function updateHistoryOrders() {
+      historyOrders.innerHTML = '';
+      
+      let filteredOrders = orderHistory;
+      
+      if (currentFilter === 'completed') {
+        filteredOrders = orderHistory.filter(order => order.status === 'completed');
+      } else if (currentFilter === 'cancelled') {
+        filteredOrders = orderHistory.filter(order => order.status === 'cancelled');
+      }
+      
+      if (filteredOrders.length === 0) {
+        historyOrders.innerHTML = `
+          <div class="text-center text-neutral-400 py-8">
+            <i class="fa fa-inbox text-4xl mb-2"></i>
+            <p>暂无${currentFilter === 'completed' ? '已送达' : currentFilter === 'cancelled' ? '已取消' : ''}订单</p>
+          </div>
+        `;
+        return;
+      }
+      
+      filteredOrders.forEach(order => {
+        const orderElement = document.createElement('div');
+        orderElement.className = 'border border-neutral-200 rounded-lg overflow-hidden transition-all duration-300 hover:shadow-md';
+        
+        const statusClass = order.status === 'completed' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger';
+        const statusText = order.status === 'completed' ? '已送达' : '已取消';
+        
+        orderElement.innerHTML = `
+          <div class="p-4 flex justify-between items-center">
+            <div>
+              <div class="text-sm text-neutral-400">订单编号: ${order.id}</div>
+              <div class="text-sm mt-1">${order.date}</div>
+            </div>
+            <div class="flex items-center">
+              <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
+              <button class="ml-3 text-primary hover:text-primary/80 transition-colors view-order-btn" data-id="${order.id}">
+                <i class="fa fa-eye"></i> 查看详情
+              </button>
+            </div>
+          </div>
+          <div class="border-t border-neutral-200 p-4 bg-neutral-50">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="text-neutral-600">${order.items.length} 个商品</div>
+              </div>
+              <div class="text-right">
+                <div class="font-medium text-secondary">¥${order.total.toFixed(2)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        historyOrders.appendChild(orderElement);
+      });
+      
+      // 添加查看详情事件监听
+      document.querySelectorAll('.view-order-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const orderId = parseInt(btn.getAttribute('data-id'));
+          openOrderDetail(orderId);
+        });
+      });
+    }
+
+    // 打开订单详情
+    function openOrderDetail(orderId) {
+      const order = orderHistory.find(order => order.id === orderId);
+      if (!order) return;
+      
+      currentOrderId = order.id;
+      currentOrderStatus = order.status;
+      
+      // 更新模态框标题
+      modalTitle.textContent = `订单详情 #${order.id}`;
+      
+      // 更新模态框内容
+      modalContent.innerHTML = `
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-neutral-400">订单日期</span>
+            <span class="font-medium">${order.date}</span>
+          </div>
+          
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-neutral-400">订单状态</span>
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}">
+              ${order.status === 'completed' ? '已送达' : '已取消'}
+            </span>
+          </div>
+          
+          <div class="border-t border-neutral-200 my-4 pt-4">
+            <h4 class="font-medium text-neutral-600 mb-3">商品列表</h4>
+            <ul class="space-y-3">
+              ${order.items.map(item => `
+                <li class="flex justify-between items-center pb-2 border-b border-neutral-100 last:border-b-0">
+                  <div class="flex items-center">
+                    <div class="bg-primary/10 text-primary rounded-full p-2 mr-3">
+                      <i class="fa fa-cutlery"></i>
+                    </div>
+                    <div>
+                      <h5 class="font-medium text-neutral-600">${item.name}</h5>
+                      <span class="text-neutral-400 text-sm">¥${item.price.toFixed(2)}/份</span>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-neutral-400 mr-2">×${item.quantity}</span>
+                    <span class="text-secondary font-medium">¥${item.totalPrice.toFixed(2)}</span>
+                  </div>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+          
+          <div class="border-t border-neutral-200 my-4 pt-4">
+            <div class="flex justify-between items-center">
+              <span class="text-neutral-600">总计</span>
+              <span class="text-secondary font-bold text-xl">¥${order.total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // 显示模态框
+      orderDetailModal.classList.remove('hidden');
+      setTimeout(() => {
+        orderDetailModal.classList.remove('opacity-0');
+        orderDetailModal.querySelector('div').classList.remove('scale-95');
+        orderDetailModal.querySelector('div').classList.add('scale-100');
+      }, 50);
+    }
+
+    // 关闭模态框
+    closeModalBtn.addEventListener('click', () => {
+      orderDetailModal.classList.add('opacity-0');
+      orderDetailModal.querySelector('div').classList.remove('scale-100');
+      orderDetailModal.querySelector('div').classList.add('scale-95');
+      
+      setTimeout(() => {
+        orderDetailModal.classList.add('hidden');
+        currentOrderId = null;
+        currentOrderStatus = null;
+      }, 300);
+    });
+
+    // 点击模态框外部关闭
+    orderDetailModal.addEventListener('click', (e) => {
+      if (e.target === orderDetailModal) {
+        closeModalBtn.click();
+      }
+    });
+
+    // 删除订单
+    deleteOrderBtn.addEventListener('click', () => {
+      if (!currentOrderId) return;
+      
+      // 确认删除
+      if (confirm('确定要删除此订单吗？此操作不可撤销。')) {
+        // 找到订单索引
+        const orderIndex = orderHistory.findIndex(order => order.id === currentOrderId);
+        
+        if (orderIndex !== -1) {
+          // 添加删除动画
+          const orderElement = document.querySelector(`.view-order-btn[data-id="${currentOrderId}"]`).closest('div');
+          orderElement.classList.add('opacity-0', 'scale-95');
+          
+          setTimeout(() => {
+            // 从历史记录中删除订单
+            orderHistory.splice(orderIndex, 1);
+            localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
+            
+            // 更新历史订单显示
+            updateHistoryOrders();
+            
+            // 关闭模态框
+            closeModalBtn.click();
+            
+            // 显示删除成功提示
+            alert('订单已成功删除');
+          }, 300);
+        }
+      }
+    });
+
+    // 检查URL参数，看是否有订单数据
+    function checkOrderFromUrl() {
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      
+      if (urlParams.has('order')) {
+        try {
+          const encodedOrder = urlParams.get('order');
+          const orderData = JSON.parse(decodeURIComponent(encodedOrder));
+          
+          // 更新购物车
+          cartItems = orderData.items;
+          totalPrice = orderData.total;
+          
+          // 更新确认页面
+          savedItemsList.innerHTML = '';
+          cartItems.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'border-b border-neutral-200 pb-3 last:border-b-0';
+            li.innerHTML = `
+              <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                  <div class="bg-primary/10 text-primary rounded-full p-2 mr-3">
+                    <i class="fa fa-cutlery"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-medium text-neutral-600">${item.name}</h3>
+                    <span class="text-neutral-400">¥${item.price.toFixed(2)}/份</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-neutral-400 mr-2">×${item.quantity}</span>
+                  <span class="text-secondary font-medium">¥${item.totalPrice.toFixed(2)}</span>
+                </div>
+              </div>
+            `;
+            savedItemsList.appendChild(li);
+          });
+          
+          confirmationTotal.textContent = `¥${totalPrice.toFixed(2)}`;
+          
+          // 生成分享链接
+          const shareUrl = `${window.location.origin}${window.location.pathname}?order=${encodedOrder}`;
+          shareUrlInput.value = shareUrl;
+          
+          // 显示确认页面
+          appDiv.style.display = 'none';
+          confirmationPage.style.display = 'block';
+          confirmationPage.classList.remove('hidden');
+        } catch (error) {
+          console.error('解析订单数据时出错:', error);
+          alert('无法解析订单数据');
+        }
+      } else if (sessionStorage.getItem('pendingOrder')) {
+        // 如果没有URL参数但有sessionStorage中的待处理订单
+        try {
+          const pendingOrder = JSON.parse(sessionStorage.getItem('pendingOrder'));
+          
+          // 更新购物车
+          cartItems = pendingOrder.items;
+          totalPrice = pendingOrder.total;
+          
+          // 生成分享链接
+          const orderJson = encodeURIComponent(JSON.stringify(pendingOrder));
+          const shareUrl = `${window.location.origin}${window.location.pathname}?order=${orderJson}`;
+          shareUrlInput.value = shareUrl;
+        } catch (error) {
+          console.error('解析待处理订单时出错:', error);
+          sessionStorage.removeItem('pendingOrder');
+        }
+      }
+    }
+
+    // 初始化页面
+    checkOrderFromUrl();
+    updateCartDisplay();
+  </script>
+</body>
+
+</html>
