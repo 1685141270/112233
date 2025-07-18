@@ -212,6 +212,16 @@
           <p class="text-lg font-medium text-neutral-600">您的宝宝向您发起一笔订单代付</p>
         </div>
         
+        <!-- 备注区域 -->
+        <div class="mb-6">
+          <label for="order-notes" class="block text-left text-neutral-600 mb-2 font-medium">订单备注</label>
+          <textarea id="order-notes" rows="3" placeholder="请输入备注信息（如：不要香菜、少冰等），输入后将自动保存" 
+                    class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all-300"></textarea>
+          <div id="notes-saved-indicator" class="hidden mt-1 text-success text-sm">
+            <i class="fa fa-check mr-1"></i> 备注已自动保存
+          </div>
+        </div>
+        
         <div class="border-t border-b border-neutral-200 py-4 my-4">
           <ul id="saved-items" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
             <!-- 保存的商品将动态添加到这里 -->
@@ -239,11 +249,16 @@
         
         <div class="mt-6 pt-6 border-t border-neutral-200">
           <p class="text-neutral-400 mb-4">分享此订单链接给他人</p>
-          <div class="flex">
-            <input type="text" id="share-url" class="flex-1 px-4 py-3 border border-neutral-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all-300" readonly>
-            <button id="copy-url-btn" class="bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-r-lg transition-all duration-300">
-              <i class="fa fa-copy"></i>
+          <div class="flex flex-col sm:flex-row">
+            <div class="flex-1 mb-3 sm:mb-0">
+              <input type="text" id="share-url" class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all-300" readonly>
+            </div>
+            <button id="copy-url-btn" class="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
+              <i class="fa fa-copy mr-2"></i> 复制链接
             </button>
+          </div>
+          <div class="mt-3 text-sm text-neutral-400">
+            <i class="fa fa-info-circle mr-1"></i> 此链接包含您的订单信息，请分享给信任的人
           </div>
         </div>
       </section>
@@ -303,6 +318,9 @@
     const deleteOrderBtn = document.getElementById('delete-order-btn');
     const shareUrlInput = document.getElementById('share-url');
     const copyUrlBtn = document.getElementById('copy-url-btn');
+    // 备注相关元素
+    const orderNotesInput = document.getElementById('order-notes');
+    const notesSavedIndicator = document.getElementById('notes-saved-indicator');
 
     // 初始化购物车状态
     let cartItems = [];
@@ -430,7 +448,7 @@
           </div>
           <div class="text-right">
             <span class="text-secondary font-medium">¥${item.totalPrice.toFixed(2)}</span>
-            <button class="delete-btn mt-1 text-neutral-400 hover:text-secondary transition-colors" data-index="${index}">
+            <button class="mt-1 text-neutral-400 hover:text-secondary transition-colors" data-index="${index}">
               <i class="fa fa-trash"></i>
             </button>
           </div>
@@ -471,8 +489,8 @@
         cartItems[index].quantity++;
         cartItems[index].totalPrice = cartItems[index].price * cartItems[index].quantity;
         updateCartDisplay();
-      } else if (e.target.closest('.delete-btn')) {
-        const index = parseInt(e.target.closest('.delete-btn').getAttribute('data-index'));
+      } else if (e.target.closest('.fa-trash').parentElement) {
+        const index = parseInt(e.target.closest('.fa-trash').parentElement.getAttribute('data-index'));
         
         // 添加删除动画
         const itemElement = e.target.closest('li');
@@ -500,17 +518,25 @@
         return;
       }
       
-      // 保存订单到sessionStorage
+      // 保存订单到sessionStorage，只有在有备注时才包含备注字段
       const orderData = {
         items: cartItems,
         total: totalPrice
       };
+      
+      // 只有当有备注时才添加备注字段
+      const initialNotes = orderNotesInput.value.trim();
+      if (initialNotes) {
+        orderData.notes = initialNotes;
+      }
+      
       sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
       
       // 生成分享链接
-      const orderJson = encodeURIComponent(JSON.stringify(orderData));
-      const shareUrl = `${window.location.origin}${window.location.pathname}?order=${orderJson}`;
-      shareUrlInput.value = shareUrl;
+      updateShareUrl();
+      
+      // 清空备注输入框
+      orderNotesInput.value = '';
       
       // 更新确认页面的商品列表
       savedItemsList.innerHTML = '';
@@ -551,6 +577,72 @@
       }, 300);
     });
 
+    // 自动保存备注（当用户输入后延迟保存）
+    let notesSaveTimeout;
+    orderNotesInput.addEventListener('input', () => {
+      clearTimeout(notesSaveTimeout);
+      notesSaveTimeout = setTimeout(() => {
+        const notes = orderNotesInput.value.trim();
+        
+        // 获取当前订单数据
+        let pendingOrder = JSON.parse(sessionStorage.getItem('pendingOrder')) || 
+                          {items: cartItems, total: totalPrice};
+        
+        // 只有当有备注时才添加备注字段，否则移除该字段
+        if (notes) {
+          pendingOrder.notes = notes;
+        } else if (pendingOrder.hasOwnProperty('notes')) {
+          delete pendingOrder.notes;
+        }
+        
+        sessionStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
+        
+        // 更新分享链接
+        updateShareUrl();
+        
+        // 显示保存成功提示
+        notesSavedIndicator.classList.remove('hidden');
+        setTimeout(() => {
+          notesSavedIndicator.classList.add('hidden');
+        }, 2000);
+      }, 1000);
+    });
+
+    // 生成更短的分享链接
+    function generatePrettyUrl(orderData) {
+        // 创建更短的随机ID
+        const randomId = Math.random().toString(36).substr(2, 6);
+        
+        // 简化数据结构，只保留必要信息
+        const minimalData = {
+            i: orderData.items.map(item => [item.name, item.price, item.quantity]),
+            t: orderData.total
+        };
+        
+        // 如果有备注，也包含在URL中
+        if (orderData.notes) minimalData.n = orderData.notes;
+        
+        // 使用URL安全的Base64编码（去除=，替换+和/）
+        const encodedData = btoa(JSON.stringify(minimalData))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+        
+        // 返回更短的URL格式
+        return `${window.location.origin}${window.location.pathname}#${encodedData}${randomId}`;
+    }
+
+    // 更新分享链接
+    function updateShareUrl() {
+      // 获取当前订单数据
+      const pendingOrder = JSON.parse(sessionStorage.getItem('pendingOrder')) || 
+                        {items: cartItems, total: totalPrice};
+      
+      // 生成更短的分享链接
+      const shareUrl = generatePrettyUrl(pendingOrder);
+      shareUrlInput.value = shareUrl;
+    }
+
     // 复制分享链接
     copyUrlBtn.addEventListener('click', () => {
       shareUrlInput.select();
@@ -558,7 +650,7 @@
       
       // 显示复制成功提示
       const originalText = copyUrlBtn.innerHTML;
-      copyUrlBtn.innerHTML = '<i class="fa fa-check"></i>';
+      copyUrlBtn.innerHTML = '<i class="fa fa-check mr-2"></i> 已复制';
       copyUrlBtn.classList.add('bg-green-600');
       
       setTimeout(() => {
@@ -569,6 +661,9 @@
 
     // 同意付款
     payNowBtn.addEventListener('click', () => {
+      // 获取用户输入的备注
+      const orderNotes = orderNotesInput.value.trim();
+      
       // 添加支付动画
       payNowBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 支付处理中...';
       payNowBtn.disabled = true;
@@ -577,7 +672,7 @@
         alert(`付款成功！金额：¥${totalPrice.toFixed(2)}`);
         
         // 保存订单到历史记录
-        saveOrderToHistory('completed');
+        saveOrderToHistory('completed', orderNotes);
         
         // 清空购物车和待处理订单
         cartItems = [];
@@ -606,6 +701,9 @@
 
     // 拒绝订单
     rejectOrderBtn.addEventListener('click', () => {
+      // 获取用户输入的备注
+      const orderNotes = orderNotesInput.value.trim();
+      
       // 添加拒绝动画
       rejectOrderBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 处理中...';
       rejectOrderBtn.disabled = true;
@@ -614,7 +712,7 @@
         alert('订单已拒绝');
         
         // 保存订单到历史记录
-        saveOrderToHistory('cancelled');
+        saveOrderToHistory('cancelled', orderNotes);
         
         // 清空购物车和待处理订单
         cartItems = [];
@@ -642,7 +740,7 @@
     });
 
     // 保存订单到历史记录
-    function saveOrderToHistory(status) {
+    function saveOrderToHistory(status, notes) {
       const orderId = Date.now();
       const orderDate = new Date().toLocaleString();
       
@@ -660,6 +758,11 @@
         total: totalPrice,
         status: status
       };
+      
+      // 只有当有备注时才添加备注字段
+      if (notes) {
+        order.notes = notes;
+      }
       
       orderHistory.unshift(order); // 添加到历史记录的开头
       localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
@@ -779,11 +882,16 @@
         const statusClass = order.status === 'completed' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger';
         const statusText = order.status === 'completed' ? '已送达' : '已取消';
         
+        // 显示备注摘要（如果有）
+        const hasNotes = order.hasOwnProperty('notes') && order.notes && order.notes.trim() !== '';
+        const notesSummary = hasNotes ? `<div class="text-xs text-neutral-500 mt-1"><i class="fa fa-sticky-note-o mr-1"></i> 有备注信息</div>` : '';
+        
         orderElement.innerHTML = `
           <div class="p-4 flex justify-between items-center">
             <div>
               <div class="text-sm text-neutral-400">订单编号: ${order.id}</div>
               <div class="text-sm mt-1">${order.date}</div>
+              ${notesSummary}
             </div>
             <div class="flex items-center">
               <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
@@ -827,6 +935,19 @@
       // 更新模态框标题
       modalTitle.textContent = `订单详情 #${order.id}`;
       
+      // 准备备注HTML（只有当有备注时才显示）
+      let notesHtml = '';
+      if (order.hasOwnProperty('notes') && order.notes && order.notes.trim() !== '') {
+        notesHtml = `
+          <div class="border-t border-neutral-200 my-4 pt-4">
+            <h4 class="font-medium text-neutral-600 mb-3 flex items-center">
+              <i class="fa fa-sticky-note-o text-primary mr-2"></i>备注信息
+            </h4>
+            <div class="bg-neutral-50 p-3 rounded-lg text-sm">${order.notes}</div>
+          </div>
+        `;
+      }
+      
       // 更新模态框内容
       modalContent.innerHTML = `
         <div class="mb-6">
@@ -837,9 +958,7 @@
           
           <div class="flex justify-between items-center mb-3">
             <span class="text-neutral-400">订单状态</span>
-            <span class="px-2 py-1 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}">
-              ${order.status === 'completed' ? '已送达' : '已取消'}
-            </span>
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}">${order.status === 'completed' ? '已送达' : '已取消'}</span>
           </div>
           
           <div class="border-t border-neutral-200 my-4 pt-4">
@@ -864,6 +983,8 @@
               `).join('')}
             </ul>
           </div>
+          
+          ${notesHtml}
           
           <div class="border-t border-neutral-200 my-4 pt-4">
             <div class="flex justify-between items-center">
@@ -940,16 +1061,17 @@
       const queryString = window.location.search;
       const urlParams = new URLSearchParams(queryString);
       
-      if (urlParams.has('order')) {
+      if (urlParams.has('o')) {
         try {
-          const encodedOrder = urlParams.get('order');
-          const orderData = JSON.parse(decodeURIComponent(encodedOrder));
+          const encodedOrder = urlParams.get('o');
+          // 使用atob解码Base64字符串
+          const orderData = JSON.parse(atob(encodedOrder));
           
           // 更新购物车
-          cartItems = orderData.items;
-          totalPrice = orderData.total;
+          cartItems = orderData.items || [];
+          totalPrice = orderData.total || 0;
           
-          // 更新确认页面
+          // 更新确认页面的商品列表
           savedItemsList.innerHTML = '';
           cartItems.forEach(item => {
             const li = document.createElement('li');
@@ -976,9 +1098,18 @@
           
           confirmationTotal.textContent = `¥${totalPrice.toFixed(2)}`;
           
+          // 只有当有备注时才填充备注信息
+          if (orderData.hasOwnProperty('notes') && orderData.notes) {
+            orderNotesInput.value = orderData.notes;
+          } else {
+            orderNotesInput.value = '';
+          }
+          
+          // 保存到sessionStorage
+          sessionStorage.setItem('pendingOrder', JSON.stringify(orderData));
+          
           // 生成分享链接
-          const shareUrl = `${window.location.origin}${window.location.pathname}?order=${encodedOrder}`;
-          shareUrlInput.value = shareUrl;
+          updateShareUrl();
           
           // 显示确认页面
           appDiv.style.display = 'none';
@@ -997,10 +1128,15 @@
           cartItems = pendingOrder.items;
           totalPrice = pendingOrder.total;
           
+          // 只有当有备注时才填充备注信息
+          if (pendingOrder.hasOwnProperty('notes') && pendingOrder.notes) {
+            orderNotesInput.value = pendingOrder.notes;
+          } else {
+            orderNotesInput.value = '';
+          }
+          
           // 生成分享链接
-          const orderJson = encodeURIComponent(JSON.stringify(pendingOrder));
-          const shareUrl = `${window.location.origin}${window.location.pathname}?order=${orderJson}`;
-          shareUrlInput.value = shareUrl;
+          updateShareUrl();
         } catch (error) {
           console.error('解析待处理订单时出错:', error);
           sessionStorage.removeItem('pendingOrder');
@@ -1014,4 +1150,4 @@
   </script>
 </body>
 
-</html>
+</html>  
